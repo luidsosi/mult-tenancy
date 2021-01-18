@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use App\Tenant\ManagerTenant;
 
 class TenantMiddleware
 {
@@ -21,7 +22,7 @@ class TenantMiddleware
         
         if(!$company) return response()->json('Empresa não encontrada', 404); 
 
-         
+        app(ManagerTenant::class)->setConnection($company);
 
         return $next($request);
     }
