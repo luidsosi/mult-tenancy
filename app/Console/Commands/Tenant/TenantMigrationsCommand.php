@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class TenantMigrationsCommand extends Command
 {
-    protected $signature = "tenants:migrate {--refresh}";
+    protected $signature = "tenants:migrate {id?} {--refresh}";
     protected $description = "Run migration tenants";
     private $managerTenant;
 
@@ -24,20 +24,38 @@ class TenantMigrationsCommand extends Command
     {
         $command = $this->option('refresh')?'migrate:refresh': 'migrate';
 
+        if($this->argument('id')) {
+            $company = Company::find($this->argument('id'));
+            
+            if($company) {
+                $this->executeMigrationCompany($company);
+                return;
+            }
+            
+            $this->info("Id Company invalid!");
+            return;
+        }
+
         $companies = Company::all();
 
         foreach ($companies as $company) {
-            $this->managerTenant->setConnection($company);
-
-            $this->info("Connection Company {$company->name}");
-
-            Artisan::call($command, [
-                '--force' => true,
-                '--path' => '/database/migrations/tenant'
-            ]);
-
-            $this->info("End Connection Company {$company->name}");
-            $this->info("---------------------------------------");
+            $this->executeMigrationCompany($company);
         }
+    }
+
+    private function executeMigrationCompany(Company $company) {
+        $command = $this->option('refresh')?'migrate:refresh': 'migrate';
+
+        $this->managerTenant->setConnection($company);
+
+        $this->info("Connection Company {$company->name}");
+
+        Artisan::call($command, [
+            '--force' => true,
+            '--path' => '/database/migrations/tenant'
+        ]);
+
+        $this->info("End Connection Company {$company->name}");
+        $this->info("---------------------------------------");
     }
 }
